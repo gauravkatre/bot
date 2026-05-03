@@ -358,7 +358,6 @@ class TickBody(BaseModel):
 @app.post("/v1/tick")
 async def tick(body: TickBody):
     actions = []
-    seen_merchants: set[str] = set()
 
     # Collect and sort by urgency descending
     trigger_items = []
@@ -369,7 +368,7 @@ async def tick(body: TickBody):
     trigger_items.sort(key=lambda x: -x[0])
 
     for urgency, trg_id, trg in trigger_items:
-        if len(actions) >= 20:
+        if len(actions) >= 50:
             break
 
         # Suppression check
@@ -380,8 +379,6 @@ async def tick(body: TickBody):
         # Get merchant — try multiple fields
         merchant_id = get_merchant_id_from_trigger(trg)
         if not merchant_id:
-            continue
-        if merchant_id in seen_merchants:
             continue
 
         merchant = get_payload("merchant", merchant_id)
@@ -431,7 +428,6 @@ async def tick(body: TickBody):
 
         if suppression_key:
             fired_suppressions.add(suppression_key)
-        seen_merchants.add(merchant_id)
 
         # Store conversation state with all context IDs
         conversations[conv_id] = {
